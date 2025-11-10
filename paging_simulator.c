@@ -9,6 +9,11 @@
 #define MIN_PROCESS_SIZE 1  // MB
 #define MAX_PROCESS_SIZE 10 // MB
 
+// Helper macro to calculate number of pages needed for a given size in MB
+// Uses ceiling division to round up: (size_mb * 1024 + page_size_kb - 1) / page_size_kb
+#define CALC_NUM_PAGES(size_mb, page_size_kb) \
+    (((size_mb) * 1024 + (page_size_kb) - 1) / (page_size_kb))
+
 // Structure to represent a page
 typedef struct {
     int process_id;
@@ -177,7 +182,7 @@ void create_process() {
     
     // Generate random process size
     int process_size = MIN_PROCESS_SIZE + rand() % (MAX_PROCESS_SIZE - MIN_PROCESS_SIZE + 1);
-    int num_pages = (process_size * 1024 + page_size_kb - 1) / page_size_kb; // Round up
+    int num_pages = CALC_NUM_PAGES(process_size, page_size_kb);
     
     // Check if there's enough total memory (RAM + swap)
     int total_free_pages = (num_physical_pages - ram_used) + 
