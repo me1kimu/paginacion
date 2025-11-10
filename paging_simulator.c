@@ -307,6 +307,7 @@ void terminate_random_process() {
     }
     
     free(proc->page_indices);
+    proc->page_indices = NULL;
     proc->active = false;
     
     printf("  -> RAM liberada: %d/%d páginas (%.1f%%)\n", 
@@ -317,65 +318,122 @@ void terminate_random_process() {
 }
 
 void access_virtual_address() {
-    // Generate random virtual address
-    unsigned long virtual_address = rand() % (virtual_memory_mb * 1024 * 1024);
-    int page_number = virtual_address / (page_size_kb * 1024);
-    int offset = virtual_address % (page_size_kb * 1024);
-    
-    printf("\n[ACCESO A DIRECCIÓN VIRTUAL] 0x%lX\n", virtual_address);
-    printf("  -> Página virtual: %d, Offset: %d\n", page_number, offset);
-    
-    access_counter++;
-    
-    // Check if page is in RAM
-    bool found_in_ram = false;
-    for (int i = 0; i < num_physical_pages; i++) {
-        if (ram_pages[i].process_id != -1) {
-            // For simplicity, we check if this is a valid page
-            ram_pages[i].last_access_time = access_counter;
-            if (i == page_number % num_physical_pages && ram_pages[i].process_id != -1) {
-                found_in_ram = true;
-                printf("  -> [ACCESO EXITOSO] Página encontrada en RAM (frame %d)\n", i);
-                break;
-            }
+    // Count active processes
+    int active_count = 0;
+    for (int i = 0; i < num_processes; i++) {
+        if (processes[i].active) {
+            active_count++;
         }
     }
     
-    if (!found_in_ram) {
-        // Page fault!
-        page_faults++;
-        printf("  -> [PAGE FAULT] Página no encontrada en RAM (Total page faults: %d)\n", page_faults);
-        
-        // Simulate swap process
-        int num_swap_pages = num_virtual_pages - num_physical_pages;
-        int swap_page_index = page_number % num_swap_pages;
-        
-        // Check if page exists in swap
-        bool found_in_swap = false;
-        for (int i = 0; i < num_swap_pages; i++) {
-            if (swap_pages[i].process_id != -1 && i == swap_page_index) {
-                found_in_swap = true;
-                printf("  -> Página encontrada en swap, iniciando swap...\n");
-                
-                // Find LRU page in RAM to replace
-                if (ram_used >= num_physical_pages) {
-                    int lru_index = find_lru_page();
-                    printf("  -> Aplicando política LRU: reemplazando página en frame %d\n", lru_index);
-                    swap_page_to_disk(lru_index);
-                }
-                
-                // Load page from swap to RAM
-                if (load_page_to_ram(i)) {
-                    printf("  -> Página cargada exitosamente en RAM\n");
-                } else {
-                    printf("  -> [ERROR] No se pudo cargar la página en RAM\n");
-                }
+    if (active_count == 0) {
+        printf("\n[INFO] No hay procesos activos para acceder\n");
+        return;
+    }
+    
+    // Select a random active process
+    int random_proc_index = rand() % active_count;
+    int current_active = 0;
+    int selected_process = -1;
+    
+    for (int i = 0; i < num_processes; i++) {
+        if (processes[i].active) {
+            if (current_active == random_proc_index) {
+                selected_process = i;
                 break;
             }
+            current_active++;
+        }
+    }
+    
+    if (selected_process == -1) {
+        return;
+    }
+    
+    Process *proc = &processes[selected_process];
+    
+    // Select a random page from this process
+    int random_page = rand() % proc->num_pages;
+    int page_index = proc->page_indices[random_page];
+    
+    // Generate virtual address for display
+    unsigned long virtual_address = (unsigned long)(rand() % (proc->size_mb * 1024 * 1024));
+    
+    printf("\n[ACCESO A DIRECCIÓN VIRTUAL] PID: %d, Dirección: 0x%lX\n", proc->pid, virtual_address);
+    printf("  -> Página del proceso: %d\n", random_page);
+    
+    access_counter++;
+    
+    if (page_index >= 0) {
+        // Page is in RAM
+        ram_pages[page_index].last_access_time = access_counter;
+        printf("  -> [ACCESO EXITOSO] Página encontrada en RAM (frame %d)\n", page_index);
+    } else {
+        // Page is in swap - PAGE FAULT!
+        page_faults++;
+        int swap_index = -(page_index + 1);
+        printf("  -> [PAGE FAULT] Página en swap (índice %d) - Total page faults: %d\n", swap_index, page_faults);
+        
+        // Check if RAM is full
+        if (ram_used >= num_physical_pages) {
+            // Find LRU page in RAM to replace
+            int lru_index = find_lru_page();
+            printf("  -> Aplicando política LRU: reemplazando página en frame %d\n", lru_index);
+            
+            // Update the process that owns the page being swapped out
+            int victim_pid = ram_pages[lru_index].process_id;
+            int victim_page_num = ram_pages[lru_index].page_number;
+            
+            // Find the process and update its page index
+            for (int i = 0; i < num_processes; i++) {
+                if (processes[i].active && processes[i].pid == victim_pid) {
+                    // Find the new swap location
+                    int new_swap_index = -1;
+                    int num_swap_pages = num_virtual_pages - num_physical_pages;
+                    for (int j = 0; j < num_swap_pages; j++) {
+                        if (swap_pages[j].process_id == -1) {
+                            new_swap_index = j;
+                            break;
+                        }
+                    }
+                    
+                    if (new_swap_index != -1) {
+                        processes[i].page_indices[victim_page_num] = -(new_swap_index + 1);
+                    }
+                    break;
+                }
+            }
+            
+            swap_page_to_disk(lru_index);
         }
         
-        if (!found_in_swap) {
-            printf("  -> [ADVERTENCIA] Página no encontrada en swap (dirección inválida)\n");
+        // Load page from swap to RAM
+        if (ram_used < num_physical_pages) {
+            // Find free RAM page
+            for (int i = 0; i < num_physical_pages; i++) {
+                if (ram_pages[i].process_id == -1) {
+                    // Move page from swap to RAM
+                    ram_pages[i] = swap_pages[swap_index];
+                    ram_pages[i].in_ram = true;
+                    ram_pages[i].last_access_time = access_counter;
+                    
+                    // Clear swap page
+                    swap_pages[swap_index].process_id = -1;
+                    swap_pages[swap_index].page_number = -1;
+                    swap_pages[swap_index].last_access_time = 0;
+                    
+                    // Update process page index
+                    proc->page_indices[random_page] = i;
+                    
+                    ram_used++;
+                    swap_used--;
+                    
+                    printf("  -> Página cargada exitosamente en RAM (frame %d)\n", i);
+                    break;
+                }
+            }
+        } else {
+            printf("  -> [ERROR] No se pudo cargar la página en RAM\n");
         }
     }
 }
