@@ -33,6 +33,7 @@ gcc -Wall -Wextra -std=c99 -O2 -o paging_simulator paging_simulator.c
 
 ## Ejecución
 
+### Ejecución Manual:
 ```bash
 ./paging_simulator
 ```
@@ -40,6 +41,12 @@ gcc -Wall -Wextra -std=c99 -O2 -o paging_simulator paging_simulator.c
 El programa solicitará los siguientes parámetros de entrada:
 1. **Tamaño de la memoria física** (en MB): Ejemplo: 100
 2. **Tamaño de página** (en KB): Ejemplo: 4
+
+### Ejecución con Script de Prueba:
+Para una demostración automatizada:
+```bash
+./test_simulator.sh
+```
 
 La memoria virtual se calculará automáticamente como un valor aleatorio entre 1.5 y 4.5 veces la memoria física.
 
