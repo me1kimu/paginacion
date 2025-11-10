@@ -439,16 +439,30 @@ void access_virtual_address() {
 }
 
 int find_lru_page() {
-    int lru_index = 0;
-    unsigned long min_time = ram_pages[0].last_access_time;
-    
-    for (int i = 1; i < num_physical_pages; i++) {
+    int lru_index = -1;
+    unsigned long min_time = 0;
+
+    // Find the first occupied RAM page to initialize min_time and lru_index
+    for (int i = 0; i < num_physical_pages; i++) {
+        if (ram_pages[i].process_id != -1) {
+            min_time = ram_pages[i].last_access_time;
+            lru_index = i;
+            break;
+        }
+    }
+
+    // If no occupied page is found, return -1 (should not happen)
+    if (lru_index == -1) {
+        return -1;
+    }
+
+    // Now search for the LRU among the rest of the occupied pages
+    for (int i = 0; i < num_physical_pages; i++) {
         if (ram_pages[i].process_id != -1 && ram_pages[i].last_access_time < min_time) {
             min_time = ram_pages[i].last_access_time;
             lru_index = i;
         }
     }
-    
     return lru_index;
 }
 
