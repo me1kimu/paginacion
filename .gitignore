@@ -1,0 +1,4 @@
+main.o
+simulador_paginacion
+memory.o
+test_page_fault

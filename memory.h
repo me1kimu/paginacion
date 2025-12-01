@@ -22,7 +22,7 @@ typedef struct {
 // Estructura para representar un proceso
 typedef struct {
     int id;
-    int tamano;            // Tamano en MB
+    float tamano;            // Tamano en MB
     int numero_pagina;       // Numero de paginas que ocupa
     int *pagina_indices;   // Índices de las páginas en el arreglo global
     bool activo;
@@ -52,7 +52,7 @@ typedef struct {
 // Funciones principales
 void administrador_memoria_inicio(MemoryManager *mm, int tamamo_fisico, int tamanoDePagina);
 void administrador_memoria_limpieza(MemoryManager *mm);
-int crear_proceso(MemoryManager *mm, int tamano_min, int tamano_max);
+int crear_proceso(MemoryManager *mm, float tamano_min, float tamano_max);
 void terminar_proceso(MemoryManager *mm, int proceso_id);
 void acceso_memoria_virtual(MemoryManager *mm, int direccion_virtual);
 void pagina_swap(MemoryManager *mm, int indice_pagina);

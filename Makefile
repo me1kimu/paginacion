@@ -10,7 +10,7 @@ all: $(TARGET)
 
 # Compilar el ejecutable
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJS) -lm
 
 # Compilar archivos objeto
 main.o: main.c memory.h
@@ -31,4 +31,7 @@ run: $(TARGET)
 debug: CFLAGS += -DDEBUG
 debug: clean $(TARGET)
 
-.PHONY: all clean run debug
+.PHONY: all clean run debug test
+test: test_page_fault.c memory.o
+	$(CC) $(CFLAGS) -o test_page_fault test_page_fault.c memory.o -lm
+	./test_page_fault

@@ -1,5 +1,5 @@
 1. Simulador de Gestión de Memoria Paginación y Swap
-	1.1Este proyecto es una simulación en C de un administrador de memoria de Sistema Operativo. Implementa un sistema de paginación que gestiona la memoria física (RAM) y utiliza un espacio de intercambio (Swap) cuando la RAM se llena, aplicando el algoritmo LRU 
+	1.1 Este proyecto es una simulación en C de un administrador de memoria de Sistema Operativo. Implementa un sistema de paginación que gestiona la memoria física (RAM) y utiliza un espacio de intercambio (Swap) cuando la RAM se llena, aplicando el algoritmo LRU 
 	para el reemplazo de páginas.
 
 2.Características
