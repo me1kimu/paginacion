@@ -1,5 +1,29 @@
-main.o
+# Compiled binaries
+paging_simulator
 simulador_paginacion
-memory.o
 test_page_fault
 combined
+
+# Object files
+*.o
+*.obj
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
