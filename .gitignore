@@ -1,5 +1,8 @@
-# Compiled binary
+# Compiled binaries
 paging_simulator
+simulador_paginacion
+test_page_fault
+combined
 
 # Object files
 *.o
